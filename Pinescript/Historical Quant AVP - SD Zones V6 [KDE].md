@@ -9,6 +9,54 @@
 
 Narzędzie przetwarza surowe dane wolumenowe i cenowe w ujęciu wielookresowym (Historical Anchored Volume Profile), stosując aparat statystyczny do filtrowania szumu rynkowego oraz dynamicznego mapowania płynności rynkowej w czasie rzeczywistym.
 
+
+### Przewodnik dla Tradera: Fundamenty działania i zastosowanie praktyczne
+
+Ten rozdział jest przeznaczony dla osób, które wykorzystują wskaźnik wyłącznie do handlu podręcznego (discretionary trading) i chcą zrozumieć, jakie informacje płyną z wykresu oraz jak przekuć je na realne decyzje inwestycyjne, bez wchodzenia w szczegóły kodu źródłowego.
+
+### A. Jaka jest główna filozofia tego narzędzia?
+Większość klasycznych wskaźników (np. RSI, MACD czy zwykłe średnie kroczące) bazuje wyłącznie na historycznej cenie. Ignorują one najważniejszy czynnik poruszający rynkiem – **wolumen**, czyli informację o tym, ile kapitału zaangażowano na danym poziomie.
+
+**Historical Quant AVP** działa na zasadzie Teorii Aukcji Rynkowej. Jego zadaniem jest znalezienie miejsc na wykresie, gdzie duże instytucje (tzw. "grubas" lub Smart Money) dokonywały masowej wymiany pozycji. Wskaźnik nie rysuje stref tam, gdzie cena po prostu zawróciła, ale tam, **gdzie doszło do rzeczywistego starcia popytu z podażą potwierdzonego ogromnym obrotem**.
+
+---
+
+### B. Co dokładnie widzisz na wykresie? (Interpretacja wizualna)
+
+Wskaźnik automatycznie nanosi na wykres kolorowe bloki (strefy) oraz linie. Oto ich bezpośrednie znaczenie rynkowe:
+
+1. **Złota Strefa / Złota Linia (POC - Point of Control):** * **Co oznacza:** To najważniejszy poziom cenowy w całym badanym okresie (np. z całej sesji dziennej lub tygodniowej). To tutaj handlowano najwięcej kontraktów.
+   * **Znaczenie dla Tradera:** Jest to tzw. „cena sprawiedliwa” (Fair Value). Rynek ma naturalną tendencję do powracania do tego poziomu (działa jak magnes).
+
+2. **Czerwone Strefy (SUPPLY - Podaż):**
+   * **Co oznacza:** Są to klastry wysokiego wolumenu, które znajdują się **powyżej** obecnej ceny rynkowej, a algorytm wykrył w nich dominację zleceń sprzedających (negatywna Delta).
+   * **Znaczenie dla Tradera:** Silny opór. To miejsca, gdzie instytucje dystrybuowały (sprzedawały) swoje aktywa. Spodziewaj się tam reakcji spadkowej.
+
+3. **Morskie / Tealowe Strefy (DEMAND - Popyt):**
+   * **Co oznacza:** Klastry wysokiego wolumenu zlokalizowane **poniżej** obecnej ceny rynkowej, gdzie przewagę zyskały zlecenia kupujących (pozytywna Delta).
+   * **Znaczenie dla Tradera:** Silne wsparcie. Miejsca instytucjonalnej akumulacji (kupna). Cena w tych rejonach ma statystyczną skłonność do odbijania w górę.
+
+4. **Pomarańczowa, schodkowa linia (dPOC - Developing POC):**
+   * **Co oznacza:** Pokazuje, jak w miarę upływu dnia przemieszczał się punkt największego obrotu.
+   * **Znaczenie dla Tradera:** Jeśli linia schodzi coraz niżej, kontrolę mają sprzedający. Jeśli skacze w górę, rynek akceptuje wyższe ceny (trend wzrostowy).
+
+---
+
+### C. W czym ten wskaźnik pomaga w codziennym handlu?
+
+Stosując to narzędzie, zyskujesz cztery kluczowe przewagi rynkowe:
+
+#### 1. Koniec z rysowaniem stref "na oko" (Pełny obiektywizm)
+Zamiast zastanawiać się, czy poprowadzić linię wsparcia po cieniach świec, czy po korpusach, otrzymujesz strefę wyznaczoną czystą matematyką i wolumenem. Strefa pojawia się tylko wtedy, gdy obrót kapitału przekroczy normę statystyczną (Z-Score lub zadany Percentyl).
+
+#### 2. Ochrona przed tzw. "łapaniem FOMO" (Złe wejścia)
+Wskaźnik chroni Cię przed otwieraniem pozycji w najgorszych możliwych momentach. Jeśli widzisz gwałtowną, zieloną świecę wzrostową, ale cena właśnie uderza w historyczną, czerwoną strefę *Supply* (Podaży), wskaźnik ostrzega Cię: *„Nie kupuj tutaj, tuż nad Tobą stoją potężne zlecenia sprzedażowe instytucji”*.
+
+#### 3. Precyzyjne planowanie punktów wyjścia (Take Profit)
+Wiedząc, gdzie leżą klastry wolumenowe z poprzednich dni (dzięki funkcji projekcji stref w prawo), możesz idealnie zaplanować realizację zysków. Jeśli grasz pozycję długą (Long), Twoim logicznym celem (Take Profit) jest spód najbliższej czerwonej strefy lub historyczny poziom POC, ponieważ tam cena najprawdopodobniej wyhamuje.
+
+#### 4. Filtracja szumu rynkowego (Czyszczenie wykresu)
+Dzięki wbudowanemu algorytmowi wygładzania (KDE), wskaźnik ignoruje przypadkowe anomalie cenowe i pojedyncze, mniejsze zlecenia. Na Twoim wykresie zostają tylko te poziomy, które realnie będą bronione przez algorytmy funduszy inwestycyjnych.
 ---
 
 ## 2. Kluczowe Filary Matematyczno-Ilościowe
