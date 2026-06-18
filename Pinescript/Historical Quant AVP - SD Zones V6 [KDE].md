@@ -27,7 +27,7 @@ Wskaźnik odchodzi od subiektywnego wyznaczania stref na rzecz trzech rygorystyc
 ### C. Matematyczna Aproksymacja Delty Rynkowej
 Z uwagi na ograniczenia historycznych danych tikowych w TradingView, skrypt implementuje algorytm podziału wolumenu wewnątrz słupka na podstawie relacji ceny zamknięcia do jego rozpiętości (High-Low):
 
-$$\text{buy\_pct} = \frac{\text{Close} - \text{Low}}{\text{High} - \text{Low}}$$
+<img width="261" height="91" alt="image" src="https://github.com/user-attachments/assets/ff6b3aa8-4854-4c73-b5c2-57fe64fb7a81" />
 
 Na tej podstawie wyliczana jest **Delta rzędu** ($\Delta$), która pozwala ocenić, czy w danym klastrze wolumenowym dominowała strona popytowa (Delta dodatnia, strefy *Demand* oznaczane kolorem morskim/teal), czy podażowa (Delta ujemna, strefy *Supply* oznaczane kolorem czerwonym).
 
