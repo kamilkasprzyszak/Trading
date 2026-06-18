@@ -1,0 +1,97 @@
+# Specyfikacja Techniczna: Historical Quant AVP - S/D Zones V6 MAX [KDE]
+
+## 1. Przeznaczenie i Przegląd Funkcjonalny
+
+**Historical Quant AVP - S/D Zones V6 MAX [KDE]** to zaawansowany wskaźnik analizy przepływu zleceń (Order Flow) i handlu ilościowego, zaimplementowany w języku Pine Script v6. Skrypt służy do precyzyjnej identyfikacji instytucjonalnych stref popytu i podaży (Supply/Demand Zones) oraz węzłów wysokiego wolumenu (HVN - High Volume Nodes) na rynkach kontraktów terminowych (indeksy, kryptowaluty).
+
+Narzędzie przetwarza surowe dane wolumenowe i cenowe w ujęciu wielookresowym (Historical Anchored Volume Profile), stosując aparat statystyczny do filtrowania szumu rynkowego oraz dynamicznego mapowania płynności rynkowej w czasie rzeczywistym.
+
+---
+
+## 2. Kluczowe Filary Matematyczno-Ilościowe
+
+### A. Algorytm Pseudo-KDE (Kernel Density Estimation)
+Tradycyjne profile wolumenowe cierpią na tzw. szum dyskretyzacji (błędy zaokrągleń wynikające z sztywnego podziału na rzędy/bins). Wskaźnik rozwiązuje ten problem poprzez implementację funkcji `smooth_profile`, która działa jako **Pseudo-KDE** przy użyciu centrowanego okna średniej ruchomej na histogramie wolumenu.
+* Wygładza to rozkład wolumenu, eliminując fałszywe mikro-szczyty (Prominence).
+* Pozwala na dokładniejsze wyznaczenie rzeczywistego punktu równowagi (POC) oraz granic stref płynności.
+
+### B. Kwantyfikowalne Metody Filtrowania HVN
+Wskaźnik odchodzi od subiektywnego wyznaczania stref na rzecz trzech rygorystycznych metod statystycznych, określających, który poziom cenowy kwalifikuje się jako strefa S/D:
+* **Kwantyle (Percentyl):** Filtruje rzędy profilu, odcinając wartości poniżej zadanego progu (np. percentyl 85 wyłania top 15% poziomów o najwyższej koncentracji wolumenu).
+* **Z-Score (Odchylenie Standardowe):** Wylicza średnią ($\mu$) oraz odchylenie standardowe ($\sigma$) wolumenu dla całego profilu. Poziom strefy aktywowany jest tylko wtedy, gdy wolumen rzędu przekracza wartość $\mu + z \cdot \sigma$.
+* **Prominencja (Lokalne Szczyty):** Analizuje topografię profilu i identyfikuje lokalne maksima (rząd jest większy od swoich bezpośrednich sąsiadów), izolując kluczowe klastry płynności bez względu na ich bezwzględny wolumen.
+
+### C. Matematyczna Aproksymacja Delty Rynkowej
+Z uwagi na ograniczenia historycznych danych tikowych w TradingView, skrypt implementuje algorytm podziału wolumenu wewnątrz słupka na podstawie relacji ceny zamknięcia do jego rozpiętości (High-Low):
+
+$$\text{buy\_pct} = \frac{\text{Close} - \text{Low}}{\text{High} - \text{Low}}$$
+
+Na tej podstawie wyliczana jest **Delta rzędu** ($\Delta$), która pozwala ocenić, czy w danym klastrze wolumenowym dominowała strona popytowa (Delta dodatnia, strefy *Demand* oznaczane kolorem morskim/teal), czy podażowa (Delta ujemna, strefy *Supply* oznaczane kolorem czerwonym).
+
+---
+
+## 3. Architektura Silnika i Funkcje Rynkowe
+
+* **Anchored Multi-Period Engine:** Skrypt zapamiętuje historyczne punkty zwrotne (kotwice czasowe np. sesje dzienne, tygodniowe) i generuje profile wstecz (do 15 okresów historycznych), co pozwala na badanie pamięci rynkowej.
+* **Dynamiczny POC (dPOC / Developing POC):** Za pomocą struktur `polyline`, wskaźnik śledzi migrację punktu kontrolnego (POC) wewnątrz trwającego okresu krok po kroku, wizualizując proces relokacji kapitału.
+* **Multi-Timeframe Second POC:** Możliwość nałożenia drugiego, nadrzędnego punktu POC z wyższego interwału (np. tygodniowego na profilu dziennym) w celu identyfikacji kluczowych poziomów wsparcia/oporu wyższego rzędu (MTF).
+* **Projekcja Stref (Zone Extension):** Historyczne strefy HVN, które nie zostały jeszcze zanegowane, są automatycznie przedłużane w prawo (projekcja), tworząc precyzyjne mapy poziomów reakcji dla obecnej ceny.
+* **Dynamic Transparency Mapping:** Przezroczystość wypełnienia stref jest dynamicznie skalowana (funkcja `normalize_transp`) względem maksimum wolumenowego (POC). Im większa koncentracja wolumenu w danym rzędzie, tym bardziej wyrazista jest strefa na wykresie.
+
+---
+
+## 4. Przegląd Parametrów Wejściowych (Inputs)
+
+### Ustawienia Bazowe (Core Settings)
+* `Zasięg Profilu (Anchor)`: Definiuje interwał czasowy kotwicy (od 1 godziny do 12 miesięcy).
+* `Ilość historycznych okresów`: Określa liczbę wstecznych profili rysowanych na wykresie.
+* `Rozdzielczość`: Liczba poziomów cenowych (rzędów) wewnątrz jednego profilu (zakres 10-100).
+* `Wygładzanie (Pseudo-KDE)`: Szerokość okna filtrującego (wartości nieparzyste 1-9).
+
+### Metody Ilościowe (Quant Methods)
+* `Metoda Obliczeń HVN`: Wybór matematycznego algorytmu odcinającego szum (Percentyl / Z-Score / Prominencja).
+* `Kwantyle: Poziom Percentyla`: Próg odcięcia dla metody kwantylowej.
+* `Z-Score`: Mnożnik odchylenia standardowego dla metody Z-Score.
+
+---
+
+## 5. Zastosowanie w Algorytmicznych Strategiach Inwestycyjnych
+
+W kontekście handlu ilościowego i automatyzacji (np. integracji z Pythonem czy systemami typu Expert Advisors), wskaźnik dostarcza krytycznych danych wejściowych:
+1. **Filtry Egzekucyjne:** Blokowanie pozycji długich (Long) bezpośrednio pod silnymi strefami *Supply* zidentyfikowanymi przez statystykę Z-Score.
+2. **Kwantyfikacja Targetów (Take Profit):** Wyznaczanie poziomów docelowych w oparciu o linie MTF POC lub dPOC, gdzie prawdopodobieństwo wyhamowania pędu ceny jest statystycznie najwyższe.
+3. **Generowanie Sygnałów Mean-Reversion:** Wykorzystanie anomalii cenowych (odchylenia od wygładzonych stref KDE) do handlu powrotnego do średniej.
+
+---
+
+## 6. Ograniczenia Środowiska, Wady i Uproszczenia Modelowe (Model Risk)
+
+Z punktu widzenia matematyki finansowej oraz rygorystycznego handlu ilościowego, implementacja zaawansowanych profili wolumenowych w środowisku Pine Script (v6) wymaga przyjęcia istotnych kompromisów. Poniżej znajduje się krytyczna analiza ograniczeń technologicznych oraz wprowadzonych uproszczeń, które należy uwzględnić przy ocenie ryzyka modelowego (Model Risk).
+
+### A. Syntetyczna Delta vs Rzeczywisty Order Flow (Market Microstructure)
+* **Ograniczenie:** Środowisko Pine Script na standardowych interwałach historycznych nie ma bezpośredniego dostępu do surowych danych L1/L2 (Order Book / Time & Sales). True Order Flow wymaga rozliczania transakcji po cenie Ask/Bid w celu określenia agresji rynkowej.
+* **Uproszczenie:** Wskaźnik stosuje matematyczną aproksymację delty na podstawie relacji ceny zamknięcia do rozpiętości słupka (OHLC Proxy). 
+* **Wada handlowa:** Wprowadza to błąd śledzenia (tracking error) w momentach wysokiej zmienności i niskiej płynności. Syntetyczna delta może błędnie zaklasyfikować wolumen jako pro-popytowy, podczas gdy na poziomie mikrostruktury rynku (Tick-by-Tick) mogło dojść do zleceń ukrytych (Iceberg) po stronie podaży.
+
+### B. Pseudo-KDE zamiast Ciągłego Estymatora Jądrowego Gęstości
+* **Ograniczenie:** Pełna, ciągła estymacja jądrowa gęstości (Gaussian KDE) wymaga kosztownych obliczeniowo operacji zmiennoprzecinkowych (całkowanie numeryczne, funkcja Gaussa) dla każdego punktu cenowego. Wykonanie takiego algorytmu na historii 5000 barów w Pine Script skutkowałoby przekroczeniem limitu czasu wykonania skryptu (Script Timeout Error).
+* **Uproszczenie:** Zastosowano dyskretną aproksymację KDE przy użyciu symetrycznego okna średniej ruchomej (SMA) na stabelaryzowanych rzędach wolumenu (`smooth_profile`).
+* **Wada handlowa:** Wygładzanie dyskretne ma charakter kaskadowy i jest zależne od parametru `rows` (rozdzielczości). Zbyt niska rozdzielczość w połączeniu z dużym oknem wygładzania może doprowadzić do przesunięcia (shiftu) matematycznego punktu POC względem rzeczywistej, historycznej koncentracji kapitału.
+
+### C. Sztywne Limity Pamięciowe i Graficzne (Runtime Constraints)
+* **Ograniczenie:** Pine Script narzuca restrykcyjne limity architektoniczne: maksymalnie 5000 barów wstecz do analizy wolumenu, limit 500 obiektów typu `box` oraz 100 obiektów `polyline` wyświetlanych jednocześnie na wykresie.
+* **Uproszczenie:** Maksymalna rozdzielczość profilu została ograniczona do 100 rzędów (`rows = 100`), a liczba monitorowanych okresów historycznych do 15 (`history_count = 15`).
+* **Wada handlowa:** Uniemożliwia to prowadzenie ciągłej analizy struktury rynkowej High-Frequency (HFT) w długim horyzoncie czasowym na niskich interwałach (np. 1-minutowych). Algorytm zmuszony jest do agregacji danych, co zaciera mikro-klastry płynności, kluczowe dla precyzyjnego pozycjonowania zleceń typu Stop Loss.
+
+### D. Brak Adaptacyjnej Zmienności (Fixed Step Binning)
+* **Ograniczenie:** Podział profilu na strefy opiera się na sztywnej, liniowej interpolacji ceny (`(maxP - minP) / rows`). 
+* **Uproszczenie:** Krok ceny (bin size) jest stały w obrębie jednego profilu i nie reaguje na dynamiczne zmiany zmienności rynkowej (np. poprzez implementację ATR - Average True Range).
+* **Wada handlowa:** Podczas gwałtownych impulsów cenowych (np. publikacje danych makroekonomicznych), sztywny podział powoduje, że rzędy stają się zbyt szerokie, co drastycznie zmniejsza precyzję generowanych stref S/D, czyniąc je zbyt ogólnymi dla systemów automatycznych egzekwowanych z poziomu API (np. w Pythonie).
+
+### E. Izolacja Wolumenu od Czasu (Time-Volume Bias)
+* **Ograniczenie:** Profil wolumenowy mierzy wyłącznie wolumen skumulowany po konkretnej cenie, ignorując wymiar czasu, przez jaki cena przebywała na danym poziomie wewnątrz sesji.
+* **Wada handlowa:** Poziom o wysokim wolumenie wygenerowany przez jedną potężną transakcję blokową (Block Trade) traktowany jest tak samo, jak poziom budowany przez wielogodzinną dystrybucję. Z perspektywy teorii aukcji rynkowej (Market Profile), poziomy te mają zupełnie inną wartość informacyjną dla tradingu pozycyjnego.
+
+---
+
+*Disclaimer: Materiały zawarte w tym repozytorium mają charakter wyłącznie badawczo-edukacyjny i nie stanowią rekomendacji inwestycyjnych.*
